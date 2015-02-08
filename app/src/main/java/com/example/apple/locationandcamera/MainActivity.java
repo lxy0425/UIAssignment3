@@ -1,6 +1,7 @@
 package com.example.apple.locationandcamera;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.Intent;
@@ -41,6 +42,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -58,6 +60,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -80,19 +83,17 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,Vie
     private SensorManager sensorManager;
     private Vibrator vibrator;
     private LocationManager locationManager;
-    TextView lat;
-    TextView lon;
     static String provider1;
     static String provider2;
-    private ImageView back, position;//返回和切换前后置摄像头
+    private ImageView back, position;
     private SurfaceView surface;
-    private ImageButton shutter;//快门
+    private ImageButton shutter;
     private SurfaceHolder holder;
-    private Camera camera;//声明相机
-    private String filepath = "";//照片保存路径
-    private int cameraPosition = 1;//0代表前置摄像头，1代表后置摄像头
+    private Camera camera;
+    private String filepath = "";
+    private int cameraPosition = 1;
     Bitmap bitmap;
-    Button button;
+    ImageView galleryButton;
     Camera.Parameters params;
     int sensor = 0;
     @Override
@@ -106,10 +107,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,Vie
         sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         locationManager = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
         vibrator = (Vibrator)getSystemService(VIBRATOR_SERVICE);
-        lat = (TextView)findViewById(R.id.lat);
-        lon = (TextView)findViewById(R.id.lon);
-        button = (Button) findViewById(R.id.to_list);
-        button.setOnClickListener(this);
+        galleryButton = (ImageView) findViewById(R.id.to_list);
+        galleryButton.setOnClickListener(this);
         this.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);//拍照过程屏幕一直处于高亮
         //设置手机屏幕朝向，一共有7种
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
@@ -119,19 +118,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,Vie
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);//surfaceview不维护自己的缓冲区，等待屏幕渲染引擎将内容推送到用户面前
         //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     }
-//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-//        if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
-//            if (resultCode == RESULT_OK) {
-//                // Image captured and saved to fileUri specified in the Intent
-//                Toast.makeText(this, "Image saved to:\n" +
-//                        data.getData(), Toast.LENGTH_LONG).show();
-//            } else if (resultCode == RESULT_CANCELED) {
-//                // User cancelled the image capture
-//            } else {
-//                // Image capture failed, advise user
-//            }
-//        }
-//    }
     protected  void onResume(){
         super.onResume();
         if(sensorManager!= null){
@@ -147,23 +133,20 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,Vie
     }
     @Override
     protected void onDestroy() {
-//        if (camera != null) {
-//            camera.release();
-//        }
         super.onDestroy();
     }
 
     private SensorEventListener sensorEventListener = new SensorEventListener() {
         @Override
         public void onSensorChanged(SensorEvent event) {
-            float[] values = event.values;
+            float[] values = null;
+            values = event.values;
             float x = values[0];
             float y = values[1];
             float z = values[2];
             int check = 20;
             if((Math.abs(x) > check || Math.abs(y) > check || Math.abs(z) > check)&& (sensor == 0)){
                 sensor++;
-                vibrator.vibrate(200);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -192,8 +175,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,Vie
                   if (location != null) {
                      latitude = location.getLatitude();
                      longitude = location.getLongitude();
-                     lat.setText(new Double(latitude).toString());
-                     lon.setText(new Double(longitude).toString());
                   }
              }
              else{
@@ -203,66 +184,50 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,Vie
                  if (location1 != null) {
                      latitude = location1.getLatitude();
                      longitude = location1.getLongitude();
-                     lat.setText(new Double(latitude).toString());
-                     lon.setText(new Double(longitude).toString());
                  }
              }
         }
 
     public void initiateCamera(){
-        camera.autoFocus(new Camera.AutoFocusCallback() {//自动对焦
-            @Override
-            public void onAutoFocus(boolean success, Camera camera) {
-                // TODO Auto-generated method stub
-                if(success) {
-                    //设置参数，并拍照
-                    params = camera.getParameters();
-                    params.setPictureFormat(PixelFormat.JPEG);//图片格式
-                    params.setPreviewSize(800, 480);//图片大小
-                    camera.setParameters(params);//将参数设置到我的camera
-                    camera.takePicture(null, null, jpeg);//将拍摄到的照片给自定义的对象
+        if(camera != null) {
+            Toast toast = new Toast(getApplicationContext());
+            toast.makeText(getApplicationContext(), "Picture will be taken 3...2...", Toast.LENGTH_SHORT).show();
+            camera.autoFocus(new Camera.AutoFocusCallback() {
+                @Override
+                public void onAutoFocus(boolean success, Camera camera) {
+                    // TODO Auto-generated method stub
+                    if (success) {
+                        params = camera.getParameters();
+                        params.setPictureFormat(PixelFormat.JPEG);
+                        params.setPreviewSize(800, 480);
+                        camera.setParameters(params);
+                        camera.takePicture(null, null, jpeg);
+                    }
                 }
-            }
-        });
+            });
+        }
+
     }
 
     public void surfaceChanged(SurfaceHolder holder, int format, int width,
                                int height) {
-        params = camera.getParameters(); // 获取各项参数
-        params.setPictureFormat(PixelFormat.JPEG); // 设置图片格式
-        params.setPreviewSize(width, height); // 设置预览大小
-        params.setPreviewFrameRate(5);  //设置每秒显示4帧
-        params.setPictureSize(width, height); // 设置保存的图片尺寸
-        params.setJpegQuality(80); // 设置照片质量
+        params = camera.getParameters();
+        params.setPictureFormat(PixelFormat.JPEG);
+        params.setPreviewSize(width, height);
+        params.setPreviewFrameRate(5);
+        params.setPictureSize(width, height);
+        params.setJpegQuality(80);
     }
-
-//    @Override
-//    public void surfaceCreated(SurfaceHolder holder) {
-//        // TODO Auto-generated method stub
-//        //当surfaceview创建时开启相机
-//        if(camera == null) {
-//            camera = Camera.open();
-//            try {
-//                camera.setPreviewDisplay(holder);//通过surfaceview显示取景画面
-//                camera.setDisplayOrientation(getPreviewDegree(MainActivity.this));
-//                camera.startPreview();//开始预览
-//            } catch (IOException e) {
-//                // TODO Auto-generated catch block
-//                e.printStackTrace();
-//            }
-//        }
-//    }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         // TODO Auto-generated method stub
-        //当surfaceview创建时开启相机
         if(camera == null) {
             camera = Camera.open();
             try {
-                camera.setPreviewDisplay(holder);//通过surfaceview显示取景画面
+                camera.setPreviewDisplay(holder);
                 camera.setDisplayOrientation(getPreviewDegree(MainActivity.this));
-                camera.startPreview();//开始预览
+                camera.startPreview();
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -271,11 +236,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,Vie
     }
 
     public static int getPreviewDegree(Activity activity) {
-        // 获得手机的方向
         int rotation = activity.getWindowManager().getDefaultDisplay()
                 .getRotation();
         int degree = 0;
-        // 根据手机的方向计算相机预览画面应该选择的角度
         switch (rotation) {
             case Surface.ROTATION_0:
                 degree = 90;
@@ -296,7 +259,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,Vie
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         // TODO Auto-generated method stub
-        //当surfaceview关闭时，关闭预览并释放资源
         camera.stopPreview();
         camera.release();
         camera = null;
@@ -304,57 +266,31 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,Vie
         surface = null;
     }
 
-    //创建jpeg图片回调数据对象
+
     Camera.PictureCallback jpeg = new Camera.PictureCallback() {
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
             // TODO Auto-generated method stub
             try {
-
-//                Bitmap bitmap = byte2Bitmap();
-//                // 根据拍摄的方向旋转图像（纵向拍摄时要需要将图像选择90度)
-//                Matrix matrix = new Matrix();
-//                matrix.setRotate(getPreviewDegree(MainActivity.this));
-//                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(),
-//                bitmap.getHeight(), matrix, true);
-////                Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-//                //自定义文件保存路径  以拍摄时间区分命名
-//                String filename = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())+".jpg";
-//                File fileFolder = new File(Environment.getExternalStorageDirectory()
-//                        + "/finger/");
-//                if (!fileFolder.exists()) { // 如果目录不存在，则创建一个名为"finger"的目录
-//                    fileFolder.mkdir();
-//                }
-//                File file = new File(fileFolder,filename);
-//                BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
-//                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos);//将图片压缩的流里面
-//                bos.flush();// 刷新此缓冲区的输出流
-//                bos.close();// 关闭此输出流并释放与此流有关的所有系统资源
-//                camera.stopPreview();//关闭预览 处理数据
-//                camera.startPreview();//数据处理完后继续开始预览
-//                bitmap.recycle();//回收bitmap空间
                 Date date = new Date();
-                SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss"); // 格式化时间
+                SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
                 String filename = format.format(date) + ".jpg";
                 String locationname = "location.txt";
                 String picturename = "picture.txt";
                 File fileFolder = new File(Environment.getExternalStorageDirectory()
                         + "/finger/");
-                if (!fileFolder.exists()) { // 如果目录不存在，则创建一个名为"finger"的目录
+                if (!fileFolder.exists()) {
                     fileFolder.mkdir();
                 }
                 File jpgFile = new File(fileFolder, filename);
-                FileOutputStream outputStream = new FileOutputStream(jpgFile); // 文件输出流
-                outputStream.write(data); // 写入sd卡中
-                outputStream.close(); // 关闭输出流
-                method2((Environment.getExternalStorageDirectory()+"/finger/"+locationname+"/"),"Latitude: "+(new Double(latitude).toString()+" Longitude: "+new Double(longitude).toString()+"\n"));
+                FileOutputStream outputStream = new FileOutputStream(jpgFile);
+                outputStream.write(data);
+                outputStream.close();
+                DecimalFormat df = new DecimalFormat("0.000");
+                method2((Environment.getExternalStorageDirectory()+"/finger/"+locationname+"/"),"Lat: "+df.format(new Double(latitude)).toString()+" Lon: "+df.format(new Double(longitude)).toString()+"\n");
                 method2((Environment.getExternalStorageDirectory()+"/finger/"+picturename+"/"),filename+"\n");
-//                OutputStreamWriter out = new OutputStreamWriter(openFileOutput((Environment.getExternalStorageDirectory()+"/finger/"+locationname+"/"),MODE_APPEND));
-//                out.write(new Double(latitude).toString()+" "+new Double(longitude).toString()+"\n");
-//                out.close();
-//                OutputStreamWriter out1 = new OutputStreamWriter(openFileOutput((Environment.getExternalStorageDirectory()+"/finger/"+picturename+"/"),MODE_APPEND));
-//                out1.write(filename+"\n");
-//                out1.close();
+                Toast toast1 = new Toast(getApplicationContext());
+                toast1.makeText(getApplicationContext(),"Picture has been taken",Toast.LENGTH_SHORT).show();
                 camera.startPreview();
                 sensor = 0 ;
             } catch (Exception e) {
@@ -366,7 +302,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,Vie
 
     public static void method2(String fileName, String content) {
         try {
-            // 打开一个写文件器，构造函数中的第二个参数true表示以追加形式写文件
             FileWriter writer = new FileWriter(fileName, true);
             writer.write(content);
             writer.close();
@@ -374,28 +309,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,Vie
             e.printStackTrace();
         }
     }
-//
-//    public static void saveFile(String toSaveString, String filePath){
-//        try{
-//            File saveFile = new File(filePath);
-//            if (!saveFile.exists())
-//            {
-//                 File dir = new File(saveFile.getParent());
-//                 dir.mkdirs();
-//                 saveFile.createNewFile();
-//            }
-//            FileOutputStream outStream = new FileOutputStream(saveFile);
-//            saveFile.
-//            outStream.write(toSaveString.getBytes());
-//            outStream.close();
-//            }
-//        catch (FileNotFoundException e){
-//            e.printStackTrace();
-//            }
-//        catch (IOException e){
-//            e.printStackTrace();
-//            }
-//        }
 
     LocationListener locationListener = new LocationListener() {
         @Override
@@ -403,8 +316,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,Vie
             if (location != null) {
                 latitude = location.getLatitude();
                 longitude = location.getLongitude();
-                lat.setText(new Double(latitude).toString());
-                lon.setText(new Double(longitude).toString());
             }
         }
 
@@ -425,14 +336,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,Vie
     };
 
     public void onClick(View view){
-        startActivity(new Intent(this, LocationActivity.class));
-//        String filename = "20150109222411"+ ".jpg";
-//        File fileFolder = new File(Environment.getExternalStorageDirectory()
-//                + "/finger/");
-//        File jpgFile = new File(fileFolder, filename);
-//        Bitmap bitmap;
-//        if(jpgFile.exists())
-//            bitmap = BitmapFactory.decodeFile(Environment.getExternalStorageState(jpgFile));
+        getFragmentManager().beginTransaction().add(android.R.id.content,new LocationFragment(),"location").commit();
     }
 
 

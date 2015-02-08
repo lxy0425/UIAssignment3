@@ -1,50 +1,20 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal">
-    <TextView
-        android:text="latitude: "
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/lat_text"/>
-
-    <TextView
-        android:id="@+id/lat"
-        android:text="0"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_toRightOf="@+id/lat_text"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="longitude: "
-        android:layout_below="@+id/lat_text"
-        android:id="@+id/lon_text"
-        />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/lon"
-        android:layout_toRightOf="@+id/lon_text"
-        android:layout_below="@+id/lat"
-        android:text="0"/>
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/to_list"
-        android:layout_alignParentRight="true"
-        android:layout_above="@+id/camera_surface"
-        android:text="Load List"/>
-
+    android:orientation="vertical"
+    android:background="#ffb469e4">
     <SurfaceView
+        android:layout_alignParentTop="true"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/camera_surface"
-        android:layout_below="@+id/lon_text" />
-
-
+        android:id="@+id/camera_surface" />
+    <ImageButton
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:scaleType="fitXY"
+        android:id="@+id/to_list"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/gallery"/>
 </RelativeLayout>
 

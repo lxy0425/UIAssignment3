@@ -1,51 +1,34 @@
 package com.example.apple.locationandcamera;
 
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.ListActivity;
+import android.app.Fragment;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.media.Image;
 import android.media.ThumbnailUtils;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.CheckBox;
-import android.widget.CheckedTextView;
 import android.widget.GridView;
-import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.RandomAccessFile;
 import java.util.ArrayList;
 
 /**
- * Created by apple on 15-01-12.
+ * Created by apple on 15-02-07.
  */
-public class LocationActivity extends Activity {
+public class LocationFragment extends Fragment{
     ArrayList<String> item = new ArrayList<String>();
     ArrayList<String> item1 = new ArrayList<String>();
     ArrayList<String> itemPicture = new ArrayList<String>();
@@ -55,14 +38,16 @@ public class LocationActivity extends Activity {
     String picturename;
     int positionRemove;
     ImageView imageView;
-//    private ArrayStringTask task = null;
+    //    private ArrayStringTask task = null;
 //    String picture;
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        getFragmentManager().beginTransaction().remove(new OtherFragment()).commit();
+    public View onCreateView(LayoutInflater inflater,ViewGroup vp,Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.list);
-        imageView = (ImageView)findViewById(R.id.camera);
+        return inflater.inflate(R.layout.list, vp, false);
+    }
+    public void onActivityCreated(Bundle savedInstanceState){
+        super.onActivityCreated(savedInstanceState);
+        imageView = (ImageView)getView().findViewById(R.id.camera);
         try {
             File file = new File(Environment.getExternalStorageDirectory(), "/finger/location.txt/");
             BufferedReader br = new BufferedReader(new FileReader(file));
@@ -76,7 +61,7 @@ public class LocationActivity extends Activity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        GridView gridView = (GridView)findViewById(R.id.grid);
+        GridView gridView = (GridView)getView().findViewById(R.id.grid);
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -95,6 +80,7 @@ public class LocationActivity extends Activity {
 //                    startActivity(intent);
                     br.close();
                     getFragmentManager().beginTransaction().add(android.R.id.content, new OtherFragment()).commit();
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -103,7 +89,7 @@ public class LocationActivity extends Activity {
         AdapterView.OnItemLongClickListener l = new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                AlertDialog.Builder adb = new AlertDialog.Builder(LocationActivity.this);
+                AlertDialog.Builder adb = new AlertDialog.Builder(getActivity());
                 adb.setTitle("Delete?");
                 adb.setMessage("Are you sure you want to delete " + position);
                 final int positionToRemove = position;
@@ -152,8 +138,8 @@ public class LocationActivity extends Activity {
                             e.printStackTrace();
                         }
 
-                            File file1 = new File(Environment.getExternalStorageDirectory(),"/finger/"+pictureName+"/");
-                            deleteFile(file1);
+                        File file1 = new File(Environment.getExternalStorageDirectory(),"/finger/"+pictureName+"/");
+                        deleteFile(file1);
                     }
                 });
                 adb.show();
@@ -166,7 +152,8 @@ public class LocationActivity extends Activity {
         View.OnClickListener l1 = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(LocationActivity.this,MainActivity.class);
+                getFragmentManager().beginTransaction().remove(LocationFragment.this).commit();
+                Intent intent = new Intent(getActivity(),MainActivity.class);
                 startActivity(intent);
             }
         };
@@ -177,8 +164,8 @@ public class LocationActivity extends Activity {
 
     class IconicAdapter extends ArrayAdapter<String> {
         IconicAdapter() {
-  //          super(LocationActivity.this, android.R.layout.simple_list_item_1, item);
-              super(LocationActivity.this, R.layout.row,R.id.label,item);
+            //          super(LocationActivity.this, android.R.layout.simple_list_item_1, item);
+            super(getActivity(), R.layout.row,R.id.label,item);
         }
         public View getView(int position, View view, ViewGroup viewGroup){
             View row = super.getView(position,view,viewGroup);
@@ -197,7 +184,7 @@ public class LocationActivity extends Activity {
                 e.printStackTrace();
             }
             String picture = item1.get(position);
- //           Bitmap bitmapBefore = BitmapFactory.decodeFile(Environment.getExternalStorageDirectory() + "/finger/" + picture + "/");
+            //           Bitmap bitmapBefore = BitmapFactory.decodeFile(Environment.getExternalStorageDirectory() + "/finger/" + picture + "/");
             Bitmap bitmapBefore = getImageThumbnail(Environment.getExternalStorageDirectory() + "/finger/" + picture + "/",200,200);
             Matrix m = new Matrix();
             m.setRotate(90);

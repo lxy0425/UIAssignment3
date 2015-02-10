@@ -190,6 +190,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,Vie
 
     public void initiateCamera(){
         if(camera != null) {
+            vibrator.vibrate(200);
             Toast toast = new Toast(getApplicationContext());
             toast.makeText(getApplicationContext(), "Picture will be taken 3...2...", Toast.LENGTH_SHORT).show();
             camera.autoFocus(new Camera.AutoFocusCallback() {
